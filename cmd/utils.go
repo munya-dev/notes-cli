@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand/v2"
 	"net/http"
 	"os"
@@ -29,12 +29,19 @@ func addRemoteFile(url string) (result string, e error) {
 	if err != nil {
 		return "", fmt.Errorf("Error fetching remote note", err)
 	}
-	var data string
+	var data []byte
+
+	data, err = io.ReadAll(res.Body)
+
+	defer res.Body.Close()
 	// json.Unmarshal([]byte(res.Body),)
-	json.NewDecoder(res.Body).Decode(&data)
-	if err = os.WriteFile(fmt.Sprintf("note%d.txt", rand.IntN(100)), []byte(data), 0777); err != nil {
+	if err != nil {
+		return "", fmt.Errorf("Error decoding remote note", err)
+
+	}
+	if err = os.WriteFile(fmt.Sprintf("note%d.txt", rand.IntN(100)), data, 0777); err != nil {
 		return "", fmt.Errorf("Error writing remote note", err)
 	}
-	return data, nil
+	return string(data), nil
 
 }
